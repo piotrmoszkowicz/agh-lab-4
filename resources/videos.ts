@@ -46,7 +46,7 @@ export const handler = async (event: APIGatewayEvent, context: Context): Promise
     const dto = JSON.parse(event.body!)
 
     // create a video
-    const video = await createVideo(dto.title)
+    const video = await createVideo(dto.id, dto.title)
 
     // return response
     return {

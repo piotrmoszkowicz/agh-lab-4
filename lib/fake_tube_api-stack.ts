@@ -5,8 +5,11 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as nodejsLambda from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import * as lambda_event_sources from "aws-cdk-lib/aws-lambda-event-sources";
 
 interface FakeTubeApiProps extends StackProps {
+  bucket: s3.Bucket;
   table: dynamodb.Table
 }
 
@@ -28,6 +31,24 @@ export class FakeTubeApiStack extends Stack {
         VIDEOS_TABLE_NAME: props.table.tableName
       },
     });
+
+    const miniaturesHandler = new nodejsLambda.NodejsFunction(this, "MiniaturesHandler", {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      entry: 'resources/miniatures.ts',
+      role: iam.Role.fromRoleName(this, "LabRoleMiniatures", "LabRole"),
+      environment: {
+        S3_BUCKET_NAME: props.bucket.bucketName,
+        VIDEOS_TABLE_NAME: props.table.tableName
+      },
+    });
+
+    // miniaturesHandler.addEventSource(
+    //   new lambda_event_sources.DynamoEventSource(props.table, {
+    //     batchSize: 100,
+    //     bisectBatchOnError: true,
+    //     startingPosition: lambda.StartingPosition.LATEST,
+    //   }),
+    // );
 
     const videosResource = api.root.addResource('videos');
 

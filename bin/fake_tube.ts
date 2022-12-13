@@ -105,6 +105,7 @@ const persistentStack = new FakeTubePersistentStack(app, 'FakeTubePersistentStac
 })
 
 new FakeTubeApiStack(app, 'FakeTubeApiStack', {
+  bucket: persistentStack.bucket,
   synthesizer: defaultStackSynthesizer,
   table: persistentStack.table,
 });

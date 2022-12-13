@@ -1,11 +1,11 @@
-import { v4 as uuid } from 'uuid'
-import { ScanCommand, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb"
+import { ScanCommand, PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb"
 
 import { getDynamoClient } from './db';
 
 interface Video {
   id: string;
   title: string;
+  miniatureUrl?: string;
 }
 
 export async function listVideos(): Promise<Video[]> {
@@ -21,6 +21,7 @@ export async function listVideos(): Promise<Video[]> {
   return scanResult.Items.map((item) => ({
     id: item.Id,
     title: item.Title,
+    miniatureUrl: item.miniatureUrl ?? "",
   }));
 }
 
@@ -44,9 +45,8 @@ export async function findVideo(id: string): Promise<Video | undefined> {
   };
 }
 
-export async function createVideo(title: string): Promise<Video> {
+export async function createVideo(id: string, title: string): Promise<Video> {
   const dynamo = getDynamoClient();
-  const id = uuid();
 
   await dynamo.send(new PutCommand({
     TableName: process.env.VIDEOS_TABLE_NAME,
@@ -60,4 +60,22 @@ export async function createVideo(title: string): Promise<Video> {
     id,
     title,
   }
+}
+
+export async function updateVideo(Id: string, miniatureUrl: string): Promise<Video> {
+  const dynamo = getDynamoClient();
+
+  const result = await dynamo.send(new UpdateCommand({
+    ExpressionAttributeValues: {
+      ":miniatureUrl": miniatureUrl,
+    },
+    Key: {
+      Id,
+    },
+    TableName: process.env.VIDEOS_TABLE_NAME,
+    UpdateExpression: "SET miniatureUrl = :miniatureUrl",
+    ReturnValues: "ALL_NEW",
+  }));
+
+  return result.Attributes as Video;
 }
